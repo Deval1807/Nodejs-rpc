@@ -15,5 +15,6 @@ app.get('/products', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Products Server is running on port ${PORT}`);
+    console.clear();
 })
 

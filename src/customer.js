@@ -15,5 +15,6 @@ app.get('/profile', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Customer Server is running on port ${PORT}`);
+    console.clear();
 })
 
