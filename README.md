@@ -43,7 +43,7 @@ This project is a simple server side appliation written in Node.js and Express.j
 1. Clone the Repository:
     ```bash
     git clone https://github.com/Deval1807/Nodejs-rpc
-    cd admin-dashboard
+    cd Nodejs-rpc
     ```
 
 2. Install dependencies:
