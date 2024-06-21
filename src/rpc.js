@@ -1,5 +1,6 @@
 const amqplib = require('amqplib');
 const { v4: uuid4 } = require('uuid');
+require('dotenv').config();
 
 // RabbitMQ connection
 let amqplibConnection = null;
@@ -9,7 +10,7 @@ let amqplibConnection = null;
  */
 const getChannel = async () => {
     if(amqplibConnection === null) {
-        amqplibConnection = await amqplib.connect('amqp://localhost')
+        amqplibConnection = await amqplib.connect(process.env.RABBITMQ_URL)
     }
     return await amqplibConnection.createChannel();
 };
