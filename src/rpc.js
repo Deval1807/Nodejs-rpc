@@ -9,10 +9,21 @@ let amqplibConnection = null;
  */
 const getChannel = async () => {
     if(amqplibConnection === null) {
-        amqplibConnection = await amqplib.connect('amqp"//localhost')
+        amqplibConnection = await amqplib.connect('amqp://localhost')
     }
     return await amqplibConnection.createChannel();
 };
+
+const expensiveDBOperation = (payload, fakeResponse) => {
+    console.log(payload);
+    console.log(fakeResponse);
+
+    return new Promise((res, rej) => {
+        setTimeout(() => {
+            res(fakeResponse)
+        }, 3000);
+    });
+}
 
 /**
  * This function will observer all the activities
@@ -35,7 +46,7 @@ const RPCObserver = async (RPC_QUEUE_NAME, fakeResponse) => {
             if(msg.content) {
                 // do the specified DB operation
                 const payload = JSON.parse(msg.content.toString());
-                const response = { fakeResponse, payload } // call fake DB operations
+                const response = await expensiveDBOperation(payload, fakeResponse) // call fake DB operations
 
                 // send response to whoever is making the request
                 channel.sendToQueue(
@@ -45,6 +56,8 @@ const RPCObserver = async (RPC_QUEUE_NAME, fakeResponse) => {
                         correlationId: msg.properties.correlationId
                     }
                 );
+
+                channel.ack(msg);
             }
         },
         {
@@ -78,11 +91,20 @@ const requestData = async(RPC_QUEUE_NAME, requestPayload, uuid) => {
 
     // check if the service got our request or not by their response
     return new Promise((resolve, reject) => {
+        
+        // timeout
+        // wait for n seconds, if the response does not arrive - close the channel
+        const timeout = setTimeout(() => {
+            channel.close();
+            resolve('Request Timed out!! API could not fulfill the request')
+        }, 7000);
+
         channel.consume(
             q.queue,
             (msg) => {
                 if(msg.properties.correlationId === uuid) {
                     resolve(JSON.parse(msg.content.toString()));
+                    clearTimeout(timeout);
                 } else {
                     reject("Data not found!")
                 }
@@ -103,7 +125,7 @@ const RPCRequest = async (RPC_QUEUE_NAME, requestPayload) => {
     const uuid = uuid4();
 
     // call the helper function
-    return requestData(RPC_QUEUE_NAME, requestPayload, uuid)
+    return await requestData(RPC_QUEUE_NAME, requestPayload, uuid)
 };
 
 module.exports = {
